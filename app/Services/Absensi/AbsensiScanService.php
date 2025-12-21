@@ -4,9 +4,11 @@ namespace App\Services\Absensi;
 
 use App\Models\Absensi;
 use App\Models\HariLibur;
+use App\Models\Setting;
 use App\Models\Siswa;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class AbsensiScanService
@@ -24,8 +26,12 @@ class AbsensiScanService
             ]);
         }
 
-        // Minggu otomatis libur
-        if ($now->isSunday()) {
+        $allowSundayAttendance = false;
+        if (Schema::hasTable('settings')) {
+            $allowSundayAttendance = Setting::getBool('absensi.allow_sunday_attendance', false);
+        }
+
+        if ($now->isSunday() && ! $allowSundayAttendance) {
             return $this->upsertLibur($siswa->id, $tanggal, 'Hari Minggu');
         }
 
