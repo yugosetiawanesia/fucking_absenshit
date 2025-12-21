@@ -27,12 +27,18 @@ class AbsensiScanService
         }
 
         $allowSundayAttendance = false;
+        $workdaysPerWeek = 6;
         if (Schema::hasTable('settings')) {
             $allowSundayAttendance = Setting::getBool('absensi.allow_sunday_attendance', false);
+            $workdaysPerWeek = (int) (Setting::getString('absensi.workdays_per_week', '6') ?? '6');
         }
 
         if ($now->isSunday() && ! $allowSundayAttendance) {
             return $this->upsertLibur($siswa->id, $tanggal, 'Hari Minggu');
+        }
+
+        if ($now->isSaturday() && $workdaysPerWeek === 5) {
+            return $this->upsertLibur($siswa->id, $tanggal, 'Hari Sabtu');
         }
 
         $libur = HariLibur::query()->whereDate('tanggal', $tanggal)->first();
