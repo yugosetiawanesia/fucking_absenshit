@@ -26,9 +26,14 @@ class PengaturanAbsensi extends Page
 
     public function mount(): void
     {
+        $legacyCooldownSeconds = (int) (Setting::getString('absensi.auto_scan_cooldown_seconds', '60') ?? '60');
+        $cooldownMinutes = (int) (Setting::getString('absensi.auto_scan_cooldown_minutes', null) ?? (string) max(1, (int) ceil($legacyCooldownSeconds / 60)));
+
         $this->form->fill([
+            'timezone' => Setting::getString('app.timezone', 'Asia/Makassar'),
             'allow_sunday_attendance' => Setting::getBool('absensi.allow_sunday_attendance', false),
             'workdays_per_week' => (int) (Setting::getString('absensi.workdays_per_week', '6') ?? '6'),
+            'auto_scan_cooldown_minutes' => $cooldownMinutes,
             'semester_id' => Schema::hasTable('semesters')
                 ? (Semester::query()->where('is_active', true)->value('id'))
                 : null,
@@ -39,6 +44,16 @@ class PengaturanAbsensi extends Page
     {
         return $form
             ->schema([
+                \Filament\Forms\Components\Select::make('timezone')
+                    ->label('Zona waktu')
+                    ->options([
+                        'Asia/Jakarta' => 'WIB (Asia/Jakarta, GMT+7)',
+                        'Asia/Makassar' => 'WITA (Asia/Makassar, GMT+8)',
+                        'Asia/Jayapura' => 'WIT (Asia/Jayapura, GMT+9)',
+                        'UTC' => 'UTC',
+                    ])
+                    ->default('Asia/Makassar')
+                    ->required(),
                 \Filament\Forms\Components\Toggle::make('allow_sunday_attendance')
                     ->label('Izinkan absen di hari Minggu')
                     ->helperText('Jika dimatikan, hari Minggu otomatis status libur dan tidak perlu absen.')
@@ -74,6 +89,12 @@ class PengaturanAbsensi extends Page
                     ->searchable()
                     ->placeholder('Pilih semester')
                     ->helperText('Atur data semester lewat menu Absensi > Semester.'),
+                \Filament\Forms\Components\TextInput::make('auto_scan_cooldown_minutes')
+                    ->label('Jeda minimal scan (menit)')
+                    ->numeric()
+                    ->minValue(0)
+                    ->default(1)
+                    ->helperText('Anti double-scan: scan pulang baru bisa dilakukan setelah melewati jeda ini dari jam masuk.'),
             ])
             ->statePath('data');
     }
@@ -82,8 +103,10 @@ class PengaturanAbsensi extends Page
     {
         $state = $this->form->getState();
 
+        Setting::setString('app.timezone', (string) ($state['timezone'] ?? 'Asia/Makassar'));
         Setting::setBool('absensi.allow_sunday_attendance', (bool) ($state['allow_sunday_attendance'] ?? false));
         Setting::setString('absensi.workdays_per_week', (string) (int) ($state['workdays_per_week'] ?? 6));
+        Setting::setString('absensi.auto_scan_cooldown_minutes', (string) (int) ($state['auto_scan_cooldown_minutes'] ?? 1));
 
         $semesterId = $state['semester_id'] ?? null;
         if ($semesterId && Schema::hasTable('semesters')) {

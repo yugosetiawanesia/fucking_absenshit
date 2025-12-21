@@ -28,9 +28,17 @@ class AbsensiScanService
 
         $allowSundayAttendance = false;
         $workdaysPerWeek = 6;
+        $autoScanCooldownSeconds = 60;
         if (Schema::hasTable('settings')) {
             $allowSundayAttendance = Setting::getBool('absensi.allow_sunday_attendance', false);
             $workdaysPerWeek = (int) (Setting::getString('absensi.workdays_per_week', '6') ?? '6');
+
+            $cooldownMinutes = Setting::getString('absensi.auto_scan_cooldown_minutes', null);
+            if ($cooldownMinutes !== null) {
+                $autoScanCooldownSeconds = max(0, (int) $cooldownMinutes) * 60;
+            } else {
+                $autoScanCooldownSeconds = (int) (Setting::getString('absensi.auto_scan_cooldown_seconds', '60') ?? '60');
+            }
         }
 
         if ($now->isSunday() && ! $allowSundayAttendance) {
@@ -46,12 +54,40 @@ class AbsensiScanService
             return $this->upsertLibur($siswa->id, $tanggal, $libur->keterangan);
         }
 
-        return DB::transaction(function () use ($siswa, $tanggal, $now, $mode) {
+        return DB::transaction(function () use ($siswa, $tanggal, $now, $mode, $autoScanCooldownSeconds) {
             /** @var Absensi $absensi */
             $absensi = Absensi::query()->firstOrCreate(
                 ['siswa_id' => $siswa->id, 'tanggal' => $tanggal],
                 ['status' => 'hadir'],
             );
+
+            $assertCooldownPassed = function () use ($absensi, $tanggal, $now, $autoScanCooldownSeconds): void {
+                if ($autoScanCooldownSeconds <= 0 || ! $absensi->jam_datang) {
+                    return;
+                }
+
+                $timezone = config('app.timezone', 'UTC');
+                $jamDatang = CarbonImmutable::createFromFormat('Y-m-d H:i:s', $tanggal.' '.$absensi->jam_datang, $timezone);
+                $elapsed = $jamDatang->diffInSeconds($now, false);
+                if ($elapsed < 0) {
+                    $elapsed = 0;
+                }
+
+                if ($elapsed < $autoScanCooldownSeconds) {
+                    $remaining = $autoScanCooldownSeconds - $elapsed;
+
+                    $remainingLabel = $remaining.' detik';
+                    if ($remaining >= 60) {
+                        $minutes = (int) floor($remaining / 60);
+                        $seconds = $remaining % 60;
+                        $remainingLabel = $minutes.' menit'.($seconds > 0 ? ' '.$seconds.' detik' : '');
+                    }
+
+                    throw ValidationException::withMessages([
+                        'barcode' => "Scan terlalu cepat. Tunggu {$remainingLabel} lagi.",
+                    ]);
+                }
+            };
 
             // Jika sebelumnya libur dan di-scan (harusnya tidak terjadi), ubah ke hadir
             if ($absensi->status === 'libur') {
@@ -85,6 +121,8 @@ class AbsensiScanService
                     ]);
                 }
 
+                $assertCooldownPassed();
+
                 $absensi->jam_pulang = $now->format('H:i:s');
                 $absensi->status = 'hadir';
                 $absensi->save();
@@ -102,6 +140,8 @@ class AbsensiScanService
             }
 
             if (! $absensi->jam_pulang) {
+                $assertCooldownPassed();
+
                 $absensi->jam_pulang = $now->format('H:i:s');
                 $absensi->status = 'hadir';
                 $absensi->save();
