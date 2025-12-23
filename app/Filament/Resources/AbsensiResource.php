@@ -32,9 +32,28 @@ class AbsensiResource extends Resource
             ->schema([
                 Forms\Components\Select::make('siswa_id')
                     ->label('Siswa')
-                    ->relationship('siswa', 'nama')
                     ->searchable()
-                    ->preload()
+                    ->getSearchResultsUsing(function (string $search) {
+                        return \App\Models\Siswa::with('kelas')
+                            ->where('nama', 'like', "%{$search}%")
+                            ->orWhere('nis', 'like', "%{$search}%")
+                            ->limit(50)
+                            ->get()
+                            ->map(function ($siswa) {
+                                return [
+                                    'id' => $siswa->id,
+                                    'nama' => $siswa->nama . ' (' . $siswa->nis . ' / ' . $siswa->kelas->nama_kelas . ')',
+                                ];
+                            })
+                            ->pluck('nama', 'id');
+                    })
+                    ->getOptionLabelUsing(function ($value) {
+                        $siswa = \App\Models\Siswa::with('kelas')->find($value);
+                        if ($siswa) {
+                            return $siswa->nama . ' (' . $siswa->nis . ' / ' . $siswa->kelas->nama_kelas . ')';
+                        }
+                        return $value;
+                    })
                     ->required(),
                 Forms\Components\DatePicker::make('tanggal')
                     ->required(),
