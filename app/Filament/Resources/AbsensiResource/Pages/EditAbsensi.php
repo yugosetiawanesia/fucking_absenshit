@@ -16,7 +16,7 @@ class EditAbsensi extends EditRecord
             Actions\Action::make('back_to_list')
                 ->label('Kembali ke Daftar')
                 ->icon('heroicon-o-arrow-left')
-                ->url(static::getUrl('index')),
+                ->url(\App\Filament\Resources\AbsensiResource::getUrl('index')),
             Actions\ViewAction::make(),
             Actions\DeleteAction::make(),
         ];
@@ -24,7 +24,7 @@ class EditAbsensi extends EditRecord
 
     protected function getRedirectUrl(): string
     {
-        return static::getUrl('index');
+        return \App\Filament\Resources\AbsensiResource::getUrl('index');
     }
 
     protected function getSavedNotificationTitle(): ?string

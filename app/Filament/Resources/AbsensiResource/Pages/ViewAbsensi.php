@@ -13,7 +13,10 @@ class ViewAbsensi extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make(),
+            Actions\Action::make('edit')
+                ->label('Edit')
+                ->icon('heroicon-o-pencil')
+                ->url(fn ($record) => \App\Filament\Resources\AbsensiResource::getUrl('edit', ['record' => $record->id])),
         ];
     }
 }

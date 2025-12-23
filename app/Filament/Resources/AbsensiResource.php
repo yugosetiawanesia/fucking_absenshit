@@ -42,11 +42,11 @@ class AbsensiResource extends Resource
                 Forms\Components\TimePicker::make('jam_pulang'),
                 Forms\Components\Select::make('status')
                     ->options([
-                        'hadir' => 'hadir',
-                        'izin' => 'izin',
-                        'sakit' => 'sakit',
-                        'alpa' => 'alpa',
-                        'libur' => 'libur',
+                        'hadir' => 'Hadir',
+                        'izin' => 'Izin',
+                        'sakit' => 'Sakit',
+                        'alpa' => 'Alpa',
+                        'libur' => 'Libur',
                     ])
                     ->required(),
                 Forms\Components\Textarea::make('keterangan')
@@ -143,18 +143,17 @@ class AbsensiResource extends Resource
                 // No filters here - all filters are in the form
             ])
             ->actions([
-                Tables\Actions\Action::make('edit_absensi')
-                    ->label('Edit')
-                    ->icon('heroicon-o-pencil')
+                Tables\Actions\Action::make('view_absensi')
+                    ->label('View')
+                    ->icon('heroicon-o-eye')
                     ->url(function ($record) {
-                        $selectedDate = session('absensi_filter_tanggal', Carbon::now()->format('Y-m-d'));
-                        
                         if ($record->absensi_id) {
-                            return static::getUrl('edit', ['record' => $record->absensi_id]);
+                            return \App\Filament\Resources\AbsensiResource::getUrl('edit', ['record' => $record->absensi_id]);
                         }
                         
-                        // Create new attendance record
-                        return static::getUrl('create') . 
+                        // For alpa status, redirect to create page with pre-filled data
+                        $selectedDate = session('absensi_filter_tanggal', Carbon::now()->format('Y-m-d'));
+                        return \App\Filament\Resources\AbsensiResource::getUrl('create') . 
                                '?siswa_id=' . $record->id . 
                                '&tanggal=' . $selectedDate;
                     }),
@@ -176,7 +175,6 @@ class AbsensiResource extends Resource
         return [
             'index' => Pages\ListAbsensis::route('/'),
             'create' => Pages\CreateAbsensi::route('/create'),
-            'view' => Pages\ViewAbsensi::route('/{record}'),
             'edit' => Pages\EditAbsensi::route('/{record}/edit'),
         ];
     }
