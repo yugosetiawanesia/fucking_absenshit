@@ -35,11 +35,9 @@ class AbsensiResource extends Resource
                     ->relationship('siswa', 'nama')
                     ->searchable()
                     ->preload()
-                    ->required()
-                    ->unique(ignoreRecord: true),
+                    ->required(),
                 Forms\Components\DatePicker::make('tanggal')
-                    ->required()
-                    ->unique(ignoreRecord: true),
+                    ->required(),
                 Forms\Components\TimePicker::make('jam_datang'),
                 Forms\Components\TimePicker::make('jam_pulang'),
                 Forms\Components\Select::make('status')
