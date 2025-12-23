@@ -70,7 +70,6 @@ class ListAbsensis extends ListRecords
                                         'izin' => 'Izin',
                                         'sakit' => 'Sakit',
                                         'alpa' => 'Alpa',
-                                        'libur' => 'Libur',
                                     ])
                                     ->placeholder('Semua Status')
                                     ->live()

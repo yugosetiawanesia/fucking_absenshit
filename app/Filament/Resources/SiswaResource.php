@@ -109,7 +109,7 @@ class SiswaResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSiswas::route('/'),
+            'index' => Pages\ListSiswa::route('/'),
             'create' => Pages\CreateSiswa::route('/create'),
             'view' => Pages\ViewSiswa::route('/{record}'),
             'edit' => Pages\EditSiswa::route('/{record}/edit'),

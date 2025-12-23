@@ -13,8 +13,27 @@ class EditAbsensi extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('back_to_list')
+                ->label('Kembali ke Daftar')
+                ->icon('heroicon-o-arrow-left')
+                ->url(static::getUrl('index')),
             Actions\ViewAction::make(),
             Actions\DeleteAction::make(),
         ];
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getUrl('index');
+    }
+
+    protected function getSavedNotificationTitle(): ?string
+    {
+        return 'Data absensi berhasil diperbarui';
+    }
+
+    protected function getSavedNotificationDescription(): ?string
+    {
+        return 'Perubahan data absensi telah tersimpan.';
     }
 }

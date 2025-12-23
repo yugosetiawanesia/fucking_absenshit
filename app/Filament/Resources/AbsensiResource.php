@@ -18,7 +18,7 @@ use Illuminate\Support\Carbon;
 
 class AbsensiResource extends Resource
 {
-    protected static ?string $model = Siswa::class;
+    protected static ?string $model = Absensi::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
@@ -31,6 +31,7 @@ class AbsensiResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Select::make('siswa_id')
+                    ->label('Siswa')
                     ->relationship('siswa', 'nama')
                     ->searchable()
                     ->preload()
@@ -62,23 +63,37 @@ class AbsensiResource extends Resource
                 $status = session('absensi_filter_status');
                 $tanggal = session('absensi_filter_tanggal', Carbon::now()->format('Y-m-d'));
                 
+                // Create a subquery to get all students with their attendance for the selected date
+                $query->select(
+                    'siswa.*',
+                    'absensi.id as absensi_id',
+                    'absensi.tanggal as absensi_tanggal',
+                    'absensi.status as absensi_status',
+                    'absensi.jam_datang as absensi_jam_datang',
+                    'absensi.jam_pulang as absensi_jam_pulang',
+                    'absensi.keterangan as absensi_keterangan',
+                    'kelas.nama_kelas as kelas_nama_kelas'
+                )
+                ->from('siswa')
+                ->leftJoin('kelas', 'siswa.kelas_id', '=', 'kelas.id')
+                ->leftJoin('absensi', function ($join) use ($tanggal) {
+                    $join->on('siswa.id', '=', 'absensi.siswa_id')
+                         ->whereDate('absensi.tanggal', $tanggal);
+                });
+                
                 // Apply class filter
                 if ($kelasId) {
-                    $query->where('kelas_id', $kelasId);
+                    $query->where('siswa.kelas_id', $kelasId);
                 }
                 
                 // Apply status filter
                 if ($status) {
                     if ($status === 'alpa') {
                         // Show students without attendance record
-                        $query->whereDoesntHave('absensi', function ($q) use ($tanggal) {
-                            $q->whereDate('tanggal', $tanggal);
-                        });
+                        $query->whereNull('absensi.id');
                     } else {
                         // Show students with specific status
-                        $query->whereHas('absensi', function ($q) use ($tanggal, $status) {
-                            $q->whereDate('tanggal', $tanggal)->where('status', $status);
-                        });
+                        $query->where('absensi.status', $status);
                     }
                 }
             })
@@ -91,22 +106,13 @@ class AbsensiResource extends Resource
                     ->label('Nama')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('kelas.nama_kelas')
+                Tables\Columns\TextColumn::make('kelas_nama_kelas')
                     ->label('Kelas')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('status_absensi')
+                Tables\Columns\TextColumn::make('absensi_status')
                     ->label('Status')
                     ->getStateUsing(function ($record) {
-                        // Get date from session or use today
-                        $selectedDate = session('absensi_filter_tanggal', Carbon::now()->format('Y-m-d'));
-                        
-                        $absensi = $record->absensi()->whereDate('tanggal', $selectedDate)->first();
-                        
-                        if ($absensi) {
-                            return $absensi->status;
-                        }
-                        
-                        return 'alpa'; // Default to alpa if no attendance record
+                        return $record->absensi_status ?? 'alpa';
                     })
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -116,29 +122,20 @@ class AbsensiResource extends Resource
                         'alpa' => 'danger',
                         'libur' => 'gray',
                     }),
-                Tables\Columns\TextColumn::make('jam_datang')
+                Tables\Columns\TextColumn::make('absensi_jam_datang')
                     ->label('Jam Datang')
                     ->getStateUsing(function ($record) {
-                        $selectedDate = session('absensi_filter_tanggal', Carbon::now()->format('Y-m-d'));
-                        
-                        $absensi = $record->absensi()->whereDate('tanggal', $selectedDate)->first();
-                        return $absensi?->jam_datang ?? '-';
+                        return $record->absensi_jam_datang ?? '-';
                     }),
-                Tables\Columns\TextColumn::make('jam_pulang')
+                Tables\Columns\TextColumn::make('absensi_jam_pulang')
                     ->label('Jam Pulang')
                     ->getStateUsing(function ($record) {
-                        $selectedDate = session('absensi_filter_tanggal', Carbon::now()->format('Y-m-d'));
-                        
-                        $absensi = $record->absensi()->whereDate('tanggal', $selectedDate)->first();
-                        return $absensi?->jam_pulang ?? '-';
+                        return $record->absensi_jam_pulang ?? '-';
                     }),
-                Tables\Columns\TextColumn::make('keterangan')
+                Tables\Columns\TextColumn::make('absensi_keterangan')
                     ->label('Keterangan')
                     ->getStateUsing(function ($record) {
-                        $selectedDate = session('absensi_filter_tanggal', Carbon::now()->format('Y-m-d'));
-                        
-                        $absensi = $record->absensi()->whereDate('tanggal', $selectedDate)->first();
-                        return $absensi?->keterangan ?? '-';
+                        return $record->absensi_keterangan ?? '-';
                     })
                     ->limit(50),
             ])
@@ -152,10 +149,8 @@ class AbsensiResource extends Resource
                     ->url(function ($record) {
                         $selectedDate = session('absensi_filter_tanggal', Carbon::now()->format('Y-m-d'));
                         
-                        $absensi = $record->absensi()->whereDate('tanggal', $selectedDate)->first();
-                        
-                        if ($absensi) {
-                            return static::getUrl('edit', ['record' => $absensi->id]);
+                        if ($record->absensi_id) {
+                            return static::getUrl('edit', ['record' => $record->absensi_id]);
                         }
                         
                         // Create new attendance record
