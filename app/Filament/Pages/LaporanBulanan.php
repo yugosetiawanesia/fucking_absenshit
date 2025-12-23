@@ -323,9 +323,30 @@ class LaporanBulanan extends Page
             return;
         }
 
-        // TODO: Implement print functionality
+        // Prepare data for printing
+        $printData = $this->reportData;
+        
+        // Debug: Check if detail_harian exists in the data
+        \Log::info('Backend Debug - Before Session:', [
+            'has_rekap_siswa' => isset($printData['rekap_siswa']),
+            'rekap_siswa_count' => isset($printData['rekap_siswa']) ? count($printData['rekap_siswa']) : 0,
+            'first_student_name' => isset($printData['rekap_siswa'][0]) ? $printData['rekap_siswa'][0]['nama'] ?? 'N/A' : 'N/A',
+            'first_student_has_detail_harian' => isset($printData['rekap_siswa'][0]['detail_harian']),
+            'detail_harian_count' => isset($printData['rekap_siswa'][0]['detail_harian']) ? count($printData['rekap_siswa'][0]['detail_harian']) : 0,
+            'sample_detail_data' => isset($printData['rekap_siswa'][0]['detail_harian']) ? 
+                array_slice($printData['rekap_siswa'][0]['detail_harian'], 0, 3, true) : []
+        ]);
+        
+        // Store data in session for print view
+        // Use JSON encode/decode to ensure proper serialization
+        $sessionData = json_decode(json_encode($printData), true);
+        session(['print_laporan_bulanan' => $sessionData]);
+        
+        // Return JavaScript to open print window
+        $this->js('window.open("' . route('print.laporan.bulanan') . '", "_blank", "width=800,height=600,scrollbars=yes,resizable=yes");');
+        
         Notification::make()
-            ->title('Fitur cetak akan segera hadir')
+            ->title('Membuka tampilan cetak...')
             ->info()
             ->send();
     }

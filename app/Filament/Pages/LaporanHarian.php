@@ -270,9 +270,17 @@ class LaporanHarian extends Page
             return;
         }
 
-        // TODO: Implement print functionality
+        // Prepare data for printing
+        $printData = $this->reportData;
+        
+        // Store data in session for print view
+        session(['print_laporan_harian' => $printData]);
+        
+        // Return JavaScript to open print window
+        $this->js('window.open("' . route('print.laporan.harian') . '", "_blank", "width=800,height=600,scrollbars=yes,resizable=yes");');
+        
         Notification::make()
-            ->title('Fitur cetak akan segera hadir')
+            ->title('Membuka tampilan cetak...')
             ->info()
             ->send();
     }
