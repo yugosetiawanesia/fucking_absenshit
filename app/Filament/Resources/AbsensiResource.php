@@ -35,9 +35,11 @@ class AbsensiResource extends Resource
                     ->relationship('siswa', 'nama')
                     ->searchable()
                     ->preload()
-                    ->required(),
+                    ->required()
+                    ->unique(ignoreRecord: true),
                 Forms\Components\DatePicker::make('tanggal')
-                    ->required(),
+                    ->required()
+                    ->unique(ignoreRecord: true),
                 Forms\Components\TimePicker::make('jam_datang'),
                 Forms\Components\TimePicker::make('jam_pulang'),
                 Forms\Components\Select::make('status')
@@ -148,7 +150,7 @@ class AbsensiResource extends Resource
                     ->icon('heroicon-o-eye')
                     ->url(function ($record) {
                         if ($record->absensi_id) {
-                            return \App\Filament\Resources\AbsensiResource::getUrl('edit', ['record' => $record->absensi_id]);
+                            return \App\Filament\Resources\AbsensiResource::getUrl('view', ['record' => $record->absensi_id]);
                         }
                         
                         // For alpa status, redirect to create page with pre-filled data
@@ -175,6 +177,7 @@ class AbsensiResource extends Resource
         return [
             'index' => Pages\ListAbsensis::route('/'),
             'create' => Pages\CreateAbsensi::route('/create'),
+            'view' => Pages\ViewAbsensi::route('/{record}'),
             'edit' => Pages\EditAbsensi::route('/{record}/edit'),
         ];
     }
