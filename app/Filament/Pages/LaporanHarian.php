@@ -151,7 +151,8 @@ class LaporanHarian extends Page
             $alpa = $counts['alpa'] ?? 0;
             $libur = $counts['libur'] ?? 0;
             
-            $persentaseKehadiran = $totalSiswa > 0 ? round((($hadir + $izin + $sakit) / ($totalSiswa - $libur)) * 100, 2) : 0;
+            $persentaseKehadiran = ($totalSiswa > 0 && ($totalSiswa - $libur) > 0) ? 
+                round((($hadir + $izin + $sakit) / ($totalSiswa - $libur)) * 100, 2) : 0;
 
             // Informasi sekolah
             $schoolName = Setting::getString('school.name', 'Sekolah');

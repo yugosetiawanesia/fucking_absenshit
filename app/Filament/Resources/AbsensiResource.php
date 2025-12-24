@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\AbsensiResource\Pages;
 use App\Filament\Resources\AbsensiResource\RelationManagers;
 use App\Models\Absensi;
+use App\Models\HariLibur;
 use App\Models\Kelas;
 use App\Models\Siswa;
 use Filament\Forms;
@@ -15,6 +16,8 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use App\Models\Setting;
 
 class AbsensiResource extends Resource
 {
@@ -81,6 +84,76 @@ class AbsensiResource extends Resource
                 $kelasId = session('absensi_filter_kelas_id');
                 $status = session('absensi_filter_status');
                 $tanggal = session('absensi_filter_tanggal', Carbon::now()->format('Y-m-d'));
+                
+                $date = \Carbon\CarbonImmutable::parse($tanggal);
+                $allowSundayAttendance = Setting::getBool('absensi.allow_sunday_attendance', false);
+                $workdaysPerWeek = (int) (Setting::getString('absensi.workdays_per_week', '6') ?? '6');
+
+                // Jika setting berubah (mis. dari 5 hari ke 6 hari kerja), bersihkan data libur otomatis
+                // agar tampilan tabel langsung sinkron.
+                if ($date->isSaturday() && $workdaysPerWeek == 6) {
+                    Absensi::query()
+                        ->whereDate('tanggal', $tanggal)
+                        ->where('status', 'libur')
+                        ->where('keterangan', 'Hari Sabtu')
+                        ->delete();
+                }
+
+                if ($date->isSunday() && $allowSundayAttendance) {
+                    Absensi::query()
+                        ->whereDate('tanggal', $tanggal)
+                        ->where('status', 'libur')
+                        ->where('keterangan', 'Hari Minggu')
+                        ->delete();
+                }
+
+                // Check if the date is a holiday using the same logic as laporan
+                $isHoliday = static::isHariLibur($tanggal);
+                
+                // If it's a holiday, validate and auto-create libur absensi for all students
+                if ($isHoliday) {
+                    // Get holiday information
+                    $hariLiburInfo = static::getHariLiburInfo($tanggal);
+                    $liburKeterangan = $hariLiburInfo ?? 'Hari Libur';
+                    
+                    // Get all students based on kelas filter
+                    $studentsQuery = \App\Models\Siswa::query();
+                    if ($kelasId) {
+                        $studentsQuery->where('kelas_id', $kelasId);
+                    }
+                    
+                    $students = $studentsQuery->get();
+                    
+                    foreach ($students as $student) {
+                        // Check if absensi already exists for this student and date
+                        $existingAbsensi = \App\Models\Absensi::where('siswa_id', $student->id)
+                            ->whereDate('tanggal', $tanggal)
+                            ->first();
+                        
+                        // If no absensi exists, create one with libur status
+                        if (!$existingAbsensi) {
+                            \App\Models\Absensi::create([
+                                'siswa_id' => $student->id,
+                                'tanggal' => $tanggal,
+                                'status' => 'libur',
+                                'keterangan' => $liburKeterangan
+                            ]);
+                        } else {
+                            // If absensi exists, ensure it's marked as libur and keterangan is synchronized
+                            $needsUpdate = $existingAbsensi->status !== 'libur'
+                                || ($existingAbsensi->keterangan ?? '') !== $liburKeterangan;
+
+                            if (! $needsUpdate) {
+                                continue;
+                            }
+
+                            $existingAbsensi->update([
+                                'status' => 'libur',
+                                'keterangan' => $liburKeterangan
+                            ]);
+                        }
+                    }
+                }
                 
                 // Create a subquery to get all students with their attendance for the selected date
                 $query->select(
@@ -197,5 +270,63 @@ class AbsensiResource extends Resource
             'view' => Pages\ViewAbsensi::route('/{record}'),
             'edit' => Pages\EditAbsensi::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * Check if a date is a holiday
+     */
+    protected static function isHariLibur($date): bool
+    {
+        $date = $date instanceof \Carbon\CarbonImmutable 
+            ? $date 
+            : \Carbon\CarbonImmutable::parse($date);
+            
+        $allowSundayAttendance = Setting::getBool('absensi.allow_sunday_attendance', false);
+        $workdaysPerWeek = (int) (Setting::getString('absensi.workdays_per_week', '6') ?? '6');
+
+        // Cek apakah hari Minggu dan tidak diizinkan absen
+        if ($date->isSunday() && ! $allowSundayAttendance) {
+            return true;
+        }
+        
+        // Sistem 5 hari kerja: Sabtu otomatis libur
+        if ($date->isSaturday() && $workdaysPerWeek == 5) {
+            return true;
+        }
+        
+        // Cek apakah tanggal tersebut hari libur (manual dari pengaturan)
+        return HariLibur::query()
+            ->whereDate('tanggal', $date->toDateString())
+            ->exists();
+    }
+
+    /**
+     * Get holiday information for a date
+     */
+    protected static function getHariLiburInfo($date): ?string
+    {
+        $date = $date instanceof \Carbon\CarbonImmutable 
+            ? $date 
+            : \Carbon\CarbonImmutable::parse($date);
+
+        $allowSundayAttendance = Setting::getBool('absensi.allow_sunday_attendance', false);
+        $workdaysPerWeek = (int) (Setting::getString('absensi.workdays_per_week', '6') ?? '6');
+            
+        // Cek apakah hari Minggu
+        if ($date->isSunday() && ! $allowSundayAttendance) {
+            return 'Hari Minggu';
+        }
+        
+        // Cek apakah hari Sabtu
+        if ($date->isSaturday() && $workdaysPerWeek == 5) {
+            return 'Hari Sabtu';
+        }
+        
+        // Cek apakah tanggal tersebut hari libur (manual dari pengaturan)
+        $hariLibur = HariLibur::query()
+            ->whereDate('tanggal', $date->toDateString())
+            ->first();
+            
+        return $hariLibur ? $hariLibur->keterangan : null;
     }
 }
