@@ -6,6 +6,7 @@ use App\Filament\Resources\AbsensiResource\Pages;
 use App\Filament\Resources\AbsensiResource\RelationManagers;
 use App\Models\Absensi;
 use App\Models\HariLibur;
+use App\Models\LiburSemester;
 use App\Models\Kelas;
 use App\Models\Siswa;
 use Filament\Forms;
@@ -295,8 +296,16 @@ class AbsensiResource extends Resource
         }
         
         // Cek apakah tanggal tersebut hari libur (manual dari pengaturan)
-        return HariLibur::query()
+        if (HariLibur::query()
             ->whereDate('tanggal', $date->toDateString())
+            ->exists()) {
+            return true;
+        }
+        
+        // Cek apakah tanggal tersebut dalam rentang libur semester
+        return LiburSemester::query()
+            ->where('tanggal_mulai', '<=', $date->toDateString())
+            ->where('tanggal_selesai', '>=', $date->toDateString())
             ->exists();
     }
 
@@ -327,6 +336,20 @@ class AbsensiResource extends Resource
             ->whereDate('tanggal', $date->toDateString())
             ->first();
             
-        return $hariLibur ? $hariLibur->keterangan : null;
+        if ($hariLibur) {
+            return $hariLibur->keterangan;
+        }
+        
+        // Cek apakah tanggal tersebut dalam rentang libur semester
+        $liburSemester = LiburSemester::query()
+            ->where('tanggal_mulai', '<=', $date->toDateString())
+            ->where('tanggal_selesai', '>=', $date->toDateString())
+            ->first();
+            
+        if ($liburSemester) {
+            return $liburSemester->nama_libur;
+        }
+            
+        return null;
     }
 }

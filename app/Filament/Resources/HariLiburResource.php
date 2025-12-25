@@ -16,7 +16,7 @@ class HariLiburResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
-    protected static ?string $navigationLabel = 'Hari Libur';
+    protected static ?string $navigationLabel = 'Hari Libur Nasional';
 
     protected static ?string $navigationGroup = 'Absensi';
 

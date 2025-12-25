@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\Absensi;
 use App\Models\HariLibur;
+use App\Models\LiburSemester;
 use App\Models\Kelas;
 use App\Models\Setting;
 use App\Models\Semester;
@@ -209,9 +210,17 @@ class LaporanHarian extends Page
         }
         
         // Cek apakah tanggal tersebut hari libur nasional
-        return HariLibur::query()
+        if (HariLibur::query()
             ->whereDate('tanggal', $date->toDateString())
             ->where('is_nasional', true)
+            ->exists()) {
+            return true;
+        }
+        
+        // Cek apakah tanggal tersebut dalam rentang libur semester
+        return LiburSemester::query()
+            ->where('tanggal_mulai', '<=', $date->toDateString())
+            ->where('tanggal_selesai', '>=', $date->toDateString())
             ->exists();
     }
 
@@ -232,7 +241,21 @@ class LaporanHarian extends Page
             ->where('is_nasional', true)
             ->first();
             
-        return $hariLibur?->keterangan ?? 'Hari Libur';
+        if ($hariLibur) {
+            return $hariLibur->keterangan;
+        }
+        
+        // Cek apakah tanggal tersebut dalam rentang libur semester
+        $liburSemester = LiburSemester::query()
+            ->where('tanggal_mulai', '<=', $date->toDateString())
+            ->where('tanggal_selesai', '>=', $date->toDateString())
+            ->first();
+            
+        if ($liburSemester) {
+            return $liburSemester->nama_libur;
+        }
+        
+        return 'Hari Libur';
     }
 
     protected function getStatusText($status): string

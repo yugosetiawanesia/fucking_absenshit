@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\Absensi;
 use App\Models\HariLibur;
+use App\Models\LiburSemester;
 use App\Models\Kelas;
 use App\Models\Setting;
 use App\Models\Semester;
@@ -270,6 +271,26 @@ class LaporanBulanan extends Page
         
         foreach ($liburNasional as $libur) {
             $hariLibur[\Carbon\Carbon::parse($libur->tanggal)->format('Y-m-d')] = $libur->keterangan;
+        }
+        
+        // Get semester holidays that overlap with the month
+        $liburSemester = LiburSemester::query()
+            ->where('tanggal_mulai', '<=', $end->toDateString())
+            ->where('tanggal_selesai', '>=', $start->toDateString())
+            ->get();
+        
+        foreach ($liburSemester as $libur) {
+            $period = CarbonPeriod::create(
+                max($libur->tanggal_mulai, $start->toDateString()),
+                min($libur->tanggal_selesai, $end->toDateString())
+            );
+            
+            foreach ($period as $date) {
+                $dateStr = $date->format('Y-m-d');
+                if (!isset($hariLibur[$dateStr])) {
+                    $hariLibur[$dateStr] = $libur->nama_libur;
+                }
+            }
         }
         
         // Add Sundays if not allowed
