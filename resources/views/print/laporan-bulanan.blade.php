@@ -21,6 +21,21 @@
                 print-color-adjust: exact !important;
             }
         }
+
+        .pdf body,
+        body.pdf {
+            font-size: 9px;
+            margin: 0;
+        }
+
+        body.pdf .table-container {
+            overflow: visible !important;
+        }
+
+        body.pdf * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
         
         body {
             font-family: Arial, sans-serif;
@@ -35,6 +50,22 @@
             margin-bottom: 10px;
             border-bottom: 2px solid #333;
             padding-bottom: 8px;
+        }
+
+        body.pdf .header {
+            display: table;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        body.pdf .header-logo,
+        body.pdf .header-text {
+            display: table-cell;
+            vertical-align: middle;
+        }
+
+        body.pdf .header-logo {
+            width: 55px;
         }
 
         .header-logo {
@@ -260,24 +291,33 @@
         }
     </style>
 </head>
-<body>
-    <button class="print-button no-print" onclick="window.print()">Cetak Laporan</button>
+<body class="{{ !empty($isPdf) ? 'pdf' : '' }}">
+    @if(empty($isPdf))
+        <button class="print-button no-print" onclick="window.print()">Cetak Laporan</button>
+    @endif
     
     <div class="header">
         @php
             $logoPath = $reportData['school_logo_path'] ?? null;
             $logoUrl = null;
             if (!empty($logoPath)) {
-                $logoUrl = str_starts_with($logoPath, 'http')
-                    ? $logoPath
-                    : asset('storage/' . ltrim($logoPath, '/'));
+                if (!empty($isPdf)) {
+                    $localPath = public_path('storage/' . ltrim($logoPath, '/'));
+                    if (is_file($localPath)) {
+                        $logoUrl = 'file://' . $localPath;
+                    }
+                } else {
+                    $logoUrl = str_starts_with($logoPath, 'http')
+                        ? $logoPath
+                        : asset('storage/' . ltrim($logoPath, '/'));
+                }
             }
         @endphp
 
         @if(!empty($logoUrl))
             <img class="header-logo" src="{{ $logoUrl }}" alt="Logo" />
         @else
-            <div style="width: 55px; height: 55px;"></div>
+            <div class="header-logo"></div>
         @endif
 
         <div class="header-text">
@@ -406,13 +446,15 @@
         Dicetak pada: {{ now()->locale('id')->translatedFormat('l, d F Y H:i') }}
     </div>
     
-    <script>
-        // Auto print when page loads
-        window.onload = function() {
-            setTimeout(function() {
-                window.print();
-            }, 500);
-        };
-    </script>
+    @if(empty($isPdf))
+        <script>
+            // Auto print when page loads
+            window.onload = function() {
+                setTimeout(function() {
+                    window.print();
+                }, 500);
+            };
+        </script>
+    @endif
 </body>
 </html>

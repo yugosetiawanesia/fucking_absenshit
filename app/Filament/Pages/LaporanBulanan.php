@@ -18,6 +18,8 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use App\Exports\LaporanBulananExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class LaporanBulanan extends Page
 {
@@ -308,11 +310,10 @@ class LaporanBulanan extends Page
             return;
         }
 
-        // TODO: Implement Excel export
-        Notification::make()
-            ->title('Fitur export Excel akan segera hadir')
-            ->info()
-            ->send();
+        $exportData = json_decode(json_encode($this->reportData), true);
+        $filename = 'Laporan Bulanan - '.($exportData['bulan_format'] ?? 'Bulan').'.xlsx';
+
+        return Excel::download(new LaporanBulananExport($exportData), $filename);
     }
 
     public function printReport()
