@@ -111,6 +111,25 @@ class AbsensiResource extends Resource
                 // Check if the date is a holiday using the same logic as laporan
                 $isHoliday = static::isHariLibur($tanggal);
                 
+                // If it's NOT a holiday anymore, clean up any existing libur absensi
+                if (!$isHoliday) {
+                    // Get all students based on kelas filter
+                    $studentsQuery = \App\Models\Siswa::query();
+                    if ($kelasId) {
+                        $studentsQuery->where('kelas_id', $kelasId);
+                    }
+                    
+                    $students = $studentsQuery->get();
+                    
+                    foreach ($students as $student) {
+                        // Delete any libur absensi for this student and date
+                        \App\Models\Absensi::where('siswa_id', $student->id)
+                            ->whereDate('tanggal', $tanggal)
+                            ->where('status', 'libur')
+                            ->delete();
+                    }
+                }
+                
                 // If it's a holiday, validate and auto-create libur absensi for all students
                 if ($isHoliday) {
                     // Get holiday information
