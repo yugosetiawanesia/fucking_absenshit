@@ -61,7 +61,7 @@ class LaporanBulanan extends Page
                                         $endDate = CarbonImmutable::now()->addYear();
                                         
                                         while ($currentDate->lte($endDate)) {
-                                            $options[$currentDate->format('Y-m')] = $currentDate->translatedFormat('F Y');
+                                            $options[$currentDate->format('Y-m')] = $currentDate->locale('id')->translatedFormat('F Y');
                                             $currentDate = $currentDate->addMonth();
                                         }
                                         
@@ -214,13 +214,14 @@ class LaporanBulanan extends Page
             // Informasi sekolah
             $schoolName = Setting::getString('school.name', 'Sekolah');
             $schoolLogo = Setting::getString('school.logo_path', null);
+            $schoolAddress = Setting::getString('school.address', '');
             $semesterActive = Schema::hasTable('semesters')
                 ? Semester::query()->where('is_active', true)->first()
                 : null;
 
             $this->reportData = [
                 'bulan' => $bulan,
-                'bulan_format' => CarbonImmutable::createFromFormat('Y-m', $bulan)->translatedFormat('F Y'),
+                'bulan_format' => CarbonImmutable::createFromFormat('Y-m', $bulan)->locale('id')->translatedFormat('F Y'),
                 'kelas' => $kelas,
                 'rekap_siswa' => $rekapSiswa,
                 'totals' => $totals,
@@ -230,6 +231,7 @@ class LaporanBulanan extends Page
                 'hari_libur' => $hariLibur,
                 'school_name' => $schoolName,
                 'school_logo_path' => $schoolLogo,
+                'school_address' => $schoolAddress,
                 'semester_active' => $semesterActive,
                 // Tambahkan statistik langsung untuk view
                 'total_hadir' => $totals['total_hadir'],

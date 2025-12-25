@@ -270,7 +270,7 @@
     </div>
     
     <div class="footer">
-        <p>Dicetak pada: {{ now()->translatedFormat('l, d F Y H:i') }}</p>
+        <p>Dicetak pada: {{ now()->locale('id')->translatedFormat('l, d F Y H:i') }}</p>
     </div>
     
     <script>

@@ -63,6 +63,7 @@ class PengaturanAbsensi extends Page
                 ? (Semester::query()->where('is_active', true)->value('id'))
                 : null,
             'school_name' => Setting::getString('school.name', ''),
+            'school_address' => Setting::getString('school.address', ''),
         ]);
     }
 
@@ -73,6 +74,11 @@ class PengaturanAbsensi extends Page
                 \Filament\Forms\Components\TextInput::make('school_name')
                     ->label('Nama sekolah')
                     ->maxLength(255),
+
+                \Filament\Forms\Components\Textarea::make('school_address')
+                    ->label('Alamat sekolah')
+                    ->rows(2)
+                    ->maxLength(500),
                 
                 \Filament\Forms\Components\Select::make('timezone')
                     ->label('Zona waktu')
@@ -273,6 +279,7 @@ class PengaturanAbsensi extends Page
             Setting::setString('absensi.workdays_per_week', (string) (int) ($state['workdays_per_week'] ?? 6));
             Setting::setString('absensi.auto_scan_cooldown_minutes', (string) (int) ($state['auto_scan_cooldown_minutes'] ?? 1));
             Setting::setString('school.name', $state['school_name'] ?? '');
+            Setting::setString('school.address', $state['school_address'] ?? '');
             
             // Handle semester
             $semesterId = $state['semester_id'] ?? null;

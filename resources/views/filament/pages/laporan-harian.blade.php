@@ -24,15 +24,14 @@
                         <p class="text-gray-600 mt-1">
                             Laporan Harian - {{ $reportData['tanggal_format'] }}
                         </p>
-                        <div class="flex flex-wrap items-center gap-4 mt-3 text-sm">
-                            <span class="text-gray-700">
-                                <span class="font-medium">Kelas:</span> {{ $reportData['kelas']['nama_kelas'] }}
-                            </span>
+                        <div class="mt-3 text-sm text-gray-700">
+                            <span class="font-medium">Kelas :</span> {{ $reportData['kelas']['nama_kelas'] }}
+                            <span class="mx-2">|</span>
                             @if($reportData['semester_active'])
-                                <span class="text-gray-700">
-                                    <span class="font-medium">Semester:</span> {{ $reportData['semester_active']['semester'] }} {{ $reportData['semester_active']['tahun_ajaran'] }}
-                                </span>
+                                <span class="font-medium">Semester :</span> {{ ucfirst($reportData['semester_active']['semester']) }} {{ $reportData['semester_active']['tahun_ajaran'] }}
+                                <span class="mx-2">|</span>
                             @endif
+                            <span class="font-medium">Total Siswa :</span> {{ $reportData['total_siswa'] ?? count($reportData['rows'] ?? []) }}
                         </div>
                     </div>
                     

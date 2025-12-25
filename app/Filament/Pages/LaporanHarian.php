@@ -163,7 +163,7 @@ class LaporanHarian extends Page
 
             $this->reportData = [
                 'tanggal' => $tanggal,
-                'tanggal_format' => CarbonImmutable::parse($tanggal)->translatedFormat('l, d F Y'),
+                'tanggal_format' => CarbonImmutable::parse($tanggal)->locale('id')->translatedFormat('l, d F Y'),
                 'kelas' => $kelas,
                 'rows' => $rows,
                 'counts' => $counts,
