@@ -22,9 +22,9 @@ class HariLiburResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
-    protected static ?string $modelLabel = 'Hari Libur';
+    protected static ?string $modelLabel = 'Libur Nasional';
 
-    protected static ?string $pluralModelLabel = 'Hari Libur';
+    protected static ?string $pluralModelLabel = 'Libur Nasional';
 
     public static function form(Form $form): Form
     {
