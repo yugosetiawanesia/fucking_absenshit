@@ -4,6 +4,7 @@ namespace App\Services\Absensi;
 
 use App\Models\Absensi;
 use App\Models\HariLibur;
+use App\Models\LiburSemester;
 use App\Models\Setting;
 use App\Models\Siswa;
 use Carbon\CarbonImmutable;
@@ -52,6 +53,15 @@ class AbsensiScanService
         $libur = HariLibur::query()->whereDate('tanggal', $tanggal)->first();
         if ($libur) {
             return $this->upsertLibur($siswa->id, $tanggal, $libur->keterangan);
+        }
+
+        // Cek libur semester
+        $liburSemester = LiburSemester::query()
+            ->where('tanggal_mulai', '<=', $tanggal)
+            ->where('tanggal_selesai', '>=', $tanggal)
+            ->first();
+        if ($liburSemester) {
+            return $this->upsertLibur($siswa->id, $tanggal, $liburSemester->nama_libur);
         }
 
         return DB::transaction(function () use ($siswa, $tanggal, $now, $mode, $autoScanCooldownSeconds) {

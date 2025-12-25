@@ -61,6 +61,12 @@ class ScanAbsensi extends Page
         }
     }
 
+    public function restartScanner(): void
+    {
+        // Method untuk restart scanner saat ganti kamera
+        $this->dispatch('restart-scanner');
+    }
+
     public function submitManualScan(): void
     {
         $barcode = trim($this->manualBarcode);
