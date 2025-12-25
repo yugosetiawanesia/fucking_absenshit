@@ -18,6 +18,8 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use App\Exports\LaporanHarianExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class LaporanHarian extends Page
 {
@@ -163,7 +165,8 @@ class LaporanHarian extends Page
 
             $this->reportData = [
                 'tanggal' => $tanggal,
-                'tanggal_format' => CarbonImmutable::parse($tanggal)->locale('id')->translatedFormat('l, d F Y'),
+                'tanggal_format' => CarbonImmutable::parse($tanggal)->locale('id')->translatedFormat('d F Y'),
+                'school_address' => Setting::getString('school.address', ''),
                 'kelas' => $kelas,
                 'rows' => $rows,
                 'counts' => $counts,
@@ -254,11 +257,10 @@ class LaporanHarian extends Page
             return;
         }
 
-        // TODO: Implement Excel export
-        Notification::make()
-            ->title('Fitur export Excel akan segera hadir')
-            ->info()
-            ->send();
+        $exportData = json_decode(json_encode($this->reportData), true);
+        $filename = 'Laporan Harian - '.($exportData['tanggal_format'] ?? 'Tanggal').'.xlsx';
+
+        return Excel::download(new LaporanHarianExport($exportData), $filename);
     }
 
     public function printReport()

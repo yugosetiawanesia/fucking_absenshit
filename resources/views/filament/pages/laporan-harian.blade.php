@@ -51,13 +51,6 @@
                             Excel
                         </x-filament::button>
                         <x-filament::button 
-                            wire:click="exportToPdf" 
-                            icon="heroicon-o-document-text"
-                            color="danger"
-                            size="sm">
-                            PDF
-                        </x-filament::button>
-                        <x-filament::button 
                             wire:click="printReport" 
                             icon="heroicon-o-printer"
                             color="primary"
