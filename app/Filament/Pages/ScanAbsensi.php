@@ -13,9 +13,11 @@ class ScanAbsensi extends Page
 
     protected static string $view = 'filament.pages.scan-absensi';
 
-    protected static ?string $navigationGroup = 'Absensi';
+    protected static ?string $navigationGroup = 'Master Absensi';
 
     protected static ?string $navigationLabel = 'Scan Absensi';
+
+    protected static ?int $navigationSort = 1;
 
     public string $mode = 'auto';
 

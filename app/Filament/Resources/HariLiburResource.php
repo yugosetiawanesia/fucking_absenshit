@@ -18,7 +18,9 @@ class HariLiburResource extends Resource
 
     protected static ?string $navigationLabel = 'Hari Libur Nasional';
 
-    protected static ?string $navigationGroup = 'Absensi';
+    protected static ?string $navigationGroup = 'Master Absensi';
+
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {

@@ -28,7 +28,7 @@ class AbsensiResource extends Resource
 
     protected static ?string $navigationLabel = 'Absensi';
 
-    protected static ?string $navigationGroup = 'Absensi';
+    protected static ?string $navigationGroup = 'Master Absensi';
 
     public static function form(Form $form): Form
     {

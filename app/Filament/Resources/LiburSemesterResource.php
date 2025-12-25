@@ -19,9 +19,9 @@ class LiburSemesterResource extends Resource
 
     protected static ?string $navigationLabel = 'Hari Libur Semester';
 
-    protected static ?string $navigationGroup = 'Absensi';
+    protected static ?string $navigationGroup = 'Master Absensi';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {

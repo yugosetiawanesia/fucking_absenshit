@@ -18,8 +18,9 @@ class PengaturanAbsensi extends Page
     use WithFileUploads;
 
     protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
-    protected static ?string $navigationGroup = 'Absensi';
+    protected static ?string $navigationGroup = 'Master Absensi';
     protected static ?string $navigationLabel = 'Pengaturan Absensi';
+    protected static ?int $navigationSort = 2;
     protected static string $view = 'filament.pages.pengaturan-absensi';
 
     public ?array $data = [];
