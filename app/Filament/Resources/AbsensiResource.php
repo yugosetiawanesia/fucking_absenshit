@@ -30,6 +30,10 @@ class AbsensiResource extends Resource
 
     protected static ?string $navigationGroup = 'Master Absensi';
 
+    protected static ?string $modelLabel = 'Absensi';
+
+    protected static ?string $pluralModelLabel = 'Absensi';
+
     public static function form(Form $form): Form
     {
         return $form

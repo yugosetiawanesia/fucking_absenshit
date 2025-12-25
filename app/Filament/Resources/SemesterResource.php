@@ -22,6 +22,10 @@ class SemesterResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
+    protected static ?string $modelLabel = 'Semester';
+
+    protected static ?string $pluralModelLabel = 'Semester';
+
     public static function form(Form $form): Form
     {
         return $form

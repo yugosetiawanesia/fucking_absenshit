@@ -26,6 +26,10 @@ class SiswaResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    protected static ?string $modelLabel = 'Siswa';
+
+    protected static ?string $pluralModelLabel = 'Siswa';
+
     public static function form(Form $form): Form
     {
         return $form

@@ -23,6 +23,10 @@ class LiburSemesterResource extends Resource
 
     protected static ?int $navigationSort = 4;
 
+    protected static ?string $modelLabel = 'Libur Semester';
+
+    protected static ?string $pluralModelLabel = 'Libur Semester';
+
     public static function form(Form $form): Form
     {
         return $form

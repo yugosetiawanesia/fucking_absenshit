@@ -25,6 +25,10 @@ class KelasResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    protected static ?string $modelLabel = 'Kelas';
+
+    protected static ?string $pluralModelLabel = 'Kelas';
+
     public static function form(Form $form): Form
     {
         return $form
